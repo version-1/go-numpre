@@ -114,17 +114,12 @@ func buildCandidate(size int) []int {
 func filter(field [][]int, x int, y int, size int, candidate []int) (int, bool, []int) {
 	_candidate := make([]int, len(candidate))
 	copy(_candidate, candidate)
-	_candidate = filterVertical(field, x, y, size, _candidate)
-	if len(_candidate) == 1 {
-		return _candidate[0], true, _candidate
-	}
-	_candidate = filterHorizontal(field, x, y, size, _candidate)
-	if len(_candidate) == 1 {
-		return _candidate[0], true, _candidate
-	}
-	_candidate = filterBox(field, x, y, size, _candidate)
-	if len(_candidate) == 1 {
-		return _candidate[0], true, _candidate
+	funcs := []func([][]int, int, int, int, []int) []int{filterVertical, filterHorizontal, filterBox}
+	for _, cb := range funcs {
+		_candidate = cb(field, x, y, size, _candidate)
+		if len(_candidate) == 1 {
+			return _candidate[0], true, _candidate
+		}
 	}
 
 	return 0, false, _candidate
