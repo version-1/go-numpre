@@ -7,33 +7,42 @@ import (
 	"strings"
 )
 
+type Result struct {
+	N         int
+	X         int
+	Y         int
+	Ok        bool
+	Value     int
+	Candidate []int
+	Field     [][]int
+}
+
 func main() {
 	const size = 9
 	flag.Parse()
 	numStr := flag.Arg(0)
-	x := 7
-	y := 2
 	field := load(numStr, size)
-	cursorValue := field[y][x]
-	candidate := []int{}
+
+	fmt.Println("")
+	fmt.Println("[START]")
+	result := Result{Field: field}
+	printResult(result, size, false)
+	n := 0
 	for i := 0; i < size; i++ {
-		candidate = append(candidate, i+1)
+		for j := 0; j < size; j++ {
+			n++
+			cursorValue := field[i][j]
+			if cursorValue == 0 {
+				candidate := buildCandidate(size)
+				value, ok, filteredCandidate := filter(field, j, i, size, candidate)
+				if ok {
+					field[i][j] = value
+				}
+				result := Result{N: n, X: j, Y: i, Ok: ok, Value: value, Candidate: filteredCandidate, Field: field}
+				printResult(result, size, true)
+			}
+		}
 	}
-
-	fmt.Println(cursorValue)
-	printResult(field, size)
-	// for i := 0; i < size; i++ {
-	// 	for j := 0; j < size; j++ {
-	// 		check(field, x, j, size, candidate)
-	// 	}
-	// }
-	value, ok, filteredCandidate := filter(field, x, y, size, candidate)
-	if ok {
-		field[y][x] = value
-	}
-
-	fmt.Println(value, ok, filteredCandidate)
-	printResult(field, size)
 }
 
 func load(numStr string, size int) [][]int {
@@ -53,10 +62,26 @@ func load(numStr string, size int) [][]int {
 	return field
 }
 
-func printResult(field [][]int, rowLength int) {
-	for i := 0; i < rowLength; i++ {
-		fmt.Println(field[i])
+func printResult(r Result, size int, header bool) {
+	if header {
+		fmt.Println("")
+		fmt.Println("n :", r.N)
+		fmt.Println("(x, y) :", r.X+1, r.Y+1)
+		fmt.Println("ok :", r.Ok)
+		fmt.Println("value :", r.Value)
+		fmt.Println("candidate :", r.Candidate)
 	}
+	for i := 0; i < size; i++ {
+		fmt.Println(r.Field[i])
+	}
+}
+
+func buildCandidate(size int) []int {
+	candidate := []int{}
+	for i := 0; i < size; i++ {
+		candidate = append(candidate, i+1)
+	}
+	return candidate
 }
 
 func filter(field [][]int, x int, y int, size int, candidate []int) (int, bool, []int) {
@@ -67,7 +92,6 @@ func filter(field [][]int, x int, y int, size int, candidate []int) (int, bool, 
 		return _candidate[0], true, _candidate
 	}
 	_candidate = filterHorizontal(field, x, y, size, _candidate)
-	fmt.Println(_candidate)
 	if len(_candidate) == 1 {
 		return _candidate[0], true, _candidate
 	}
@@ -82,15 +106,12 @@ func filter(field [][]int, x int, y int, size int, candidate []int) (int, bool, 
 func filterVertical(field [][]int, x int, y int, size int, candidate []int) []int {
 	_candidate := make([]int, len(candidate))
 	copy(_candidate, candidate)
-	fmt.Println(_candidate)
 	for i := 0; i < size; i++ {
 		value := field[i][x]
 		if y != i && value != 0 {
-			fmt.Println(value)
 			_candidate = remove(_candidate, value)
 		}
 	}
-	fmt.Println(_candidate)
 	return _candidate
 }
 
