@@ -1,1 +1,8 @@
 # go-numpre
+
+# How to Run
+
+```
+go run main.go [numpre str(81 chars)]
+// eg. go run main.go 000740015050100673000000809128367590000204000305090762839006021004000080271438956
+```
