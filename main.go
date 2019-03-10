@@ -14,35 +14,49 @@ type Result struct {
 	Ok        bool
 	Value     int
 	Candidate []int
+	Empty     int
 	Field     [][]int
 }
 
 func main() {
 	const size = 9
+	const maxTry = 1000
 	flag.Parse()
 	numStr := flag.Arg(0)
 	field := load(numStr, size)
 
 	fmt.Println("")
 	fmt.Println("[START]")
+	empty := counting(field, size)
 	result := Result{Field: field}
 	printResult(result, size, false)
 	n := 0
-	for i := 0; i < size; i++ {
-		for j := 0; j < size; j++ {
-			n++
-			cursorValue := field[i][j]
-			if cursorValue == 0 {
-				candidate := buildCandidate(size)
-				value, ok, filteredCandidate := filter(field, j, i, size, candidate)
-				if ok {
-					field[i][j] = value
+	for empty > 0 || n < maxTry {
+		for i := 0; i < size; i++ {
+			for j := 0; j < size; j++ {
+				n++
+				cursorValue := field[i][j]
+				if cursorValue == 0 {
+					candidate := buildCandidate(size)
+					value, ok, filteredCandidate := filter(field, j, i, size, candidate)
+					if ok {
+						field[i][j] = value
+						empty--
+					}
+					result = Result{N: n, X: j, Y: i, Ok: ok, Value: value, Candidate: filteredCandidate, Empty: empty, Field: field}
+					printResult(result, size, true)
 				}
-				result := Result{N: n, X: j, Y: i, Ok: ok, Value: value, Candidate: filteredCandidate, Field: field}
-				printResult(result, size, true)
 			}
 		}
 	}
+
+	if empty == 0 {
+		fmt.Println("[END]")
+	} else {
+		fmt.Println("[FAILED]")
+	}
+	printResult(result, size, false)
+
 }
 
 func load(numStr string, size int) [][]int {
@@ -69,11 +83,24 @@ func printResult(r Result, size int, header bool) {
 		fmt.Println("(x, y) :", r.X+1, r.Y+1)
 		fmt.Println("ok :", r.Ok)
 		fmt.Println("value :", r.Value)
+		fmt.Println("empty :", r.Empty)
 		fmt.Println("candidate :", r.Candidate)
 	}
 	for i := 0; i < size; i++ {
 		fmt.Println(r.Field[i])
 	}
+}
+
+func counting(field [][]int, size int) int {
+	n := 0
+	for i := 0; i < size; i++ {
+		for j := 0; j < size; j++ {
+			if field[i][j] == 0 {
+				n++
+			}
+		}
+	}
+	return n
 }
 
 func buildCandidate(size int) []int {
