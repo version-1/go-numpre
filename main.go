@@ -3,63 +3,22 @@ package main
 import (
 	"flag"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 )
 
-type Result struct {
-	N         int
-	X         int
-	Y         int
-	Ok        bool
-	Value     int
-	Candidate []int
-	Empty     int
-	Field     [][]int
-}
-
-func main() {
-	const size = 9
-	const maxTry = 1000
-	flag.Parse()
-	numStr := flag.Arg(0)
-	field := load(numStr, size)
-
-	fmt.Println("")
-	fmt.Println("[START]")
-	empty := counting(field, size)
-	result := Result{Field: field}
-	printResult(result, size, false)
-	n := 0
-	for empty > 0 || n < maxTry {
-		for i := 0; i < size; i++ {
-			for j := 0; j < size; j++ {
-				n++
-				cursorValue := field[i][j]
-				if cursorValue == 0 {
-					candidate := buildCandidate(size)
-					value, ok, filteredCandidate := filter(field, j, i, size, candidate)
-					if ok {
-						field[i][j] = value
-						empty--
-					}
-					result = Result{N: n, X: j, Y: i, Ok: ok, Value: value, Candidate: filteredCandidate, Empty: empty, Field: field}
-					printResult(result, size, true)
-				}
-			}
+func Render(grid *[][]int) {
+	for i := 0; i < 9; i++ {
+		var row string
+		for _, v := range (*grid)[i] {
+			row += strconv.Itoa(v) + ", "
 		}
+		fmt.Printf("[ %s ] \n", row[0:25])
 	}
-
-	if empty == 0 {
-		fmt.Println("[END]")
-	} else {
-		fmt.Println("[FAILED]")
-	}
-	printResult(result, size, false)
-
 }
 
-func load(numStr string, size int) [][]int {
+func Load(numStr string, size int) [][]int {
 	field := [][]int{}
 	for i := 0; i < size; i++ {
 		start := i * size
@@ -76,107 +35,65 @@ func load(numStr string, size int) [][]int {
 	return field
 }
 
-func printResult(r Result, size int, header bool) {
-	if header {
-		fmt.Println("")
-		fmt.Println("n :", r.N)
-		fmt.Println("(x, y) :", r.X+1, r.Y+1)
-		fmt.Println("ok :", r.Ok)
-		fmt.Println("value :", r.Value)
-		fmt.Println("empty :", r.Empty)
-		fmt.Println("candidate :", r.Candidate)
+func Possible(grid *[][]int, y int, x int, n int) bool {
+	for i := 0; i < 9; i++ {
+		if i != x && (*grid)[y][i] == n {
+			return false
+		}
 	}
-	for i := 0; i < size; i++ {
-		fmt.Println(r.Field[i])
-	}
-}
 
-func counting(field [][]int, size int) int {
-	n := 0
-	for i := 0; i < size; i++ {
-		for j := 0; j < size; j++ {
-			if field[i][j] == 0 {
-				n++
+	for j := 0; j < 9; j++ {
+		if j != x && (*grid)[j][x] == n {
+			return false
+		}
+	}
+
+	x0 := int(math.Floor(float64(x)/3) * 3)
+	y0 := int(math.Floor(float64(y)/3) * 3)
+
+	for i := 0; i < 3; i++ {
+		for j := 0; j < 3; j++ {
+			if (*grid)[y0+i][x0+j] == n {
+				return false
 			}
 		}
 	}
-	return n
+
+	return true
 }
 
-func buildCandidate(size int) []int {
-	candidate := []int{}
-	for i := 0; i < size; i++ {
-		candidate = append(candidate, i+1)
-	}
-	return candidate
-}
-
-func filter(field [][]int, x int, y int, size int, candidate []int) (int, bool, []int) {
-	_candidate := make([]int, len(candidate))
-	copy(_candidate, candidate)
-	funcs := []func([][]int, int, int, int, []int) []int{filterVertical, filterHorizontal, filterBox}
-	for _, cb := range funcs {
-		_candidate = cb(field, x, y, size, _candidate)
-		if len(_candidate) == 1 {
-			return _candidate[0], true, _candidate
-		}
-	}
-
-	return 0, false, _candidate
-}
-
-func filterVertical(field [][]int, x int, y int, size int, candidate []int) []int {
-	_candidate := make([]int, len(candidate))
-	copy(_candidate, candidate)
-	for i := 0; i < size; i++ {
-		value := field[i][x]
-		if y != i && value != 0 {
-			_candidate = remove(_candidate, value)
-		}
-	}
-	return _candidate
-}
-
-func filterHorizontal(field [][]int, x int, y int, size int, candidate []int) []int {
-	_candidate := make([]int, len(candidate))
-	copy(_candidate, candidate)
-	for i := 0; i < size; i++ {
-		if x != i && field[y][i] != 0 {
-			_candidate = remove(_candidate, field[y][i])
-		}
-	}
-	return _candidate
-}
-
-func filterBox(field [][]int, x int, y int, size int, candidate []int) []int {
-	const sectionSize = 3
-	_candidate := make([]int, len(candidate))
-	copy(_candidate, candidate)
-	row := y / sectionSize
-	col := x / sectionSize
-	indexY := row * sectionSize
-	indexX := col * sectionSize
-	boxWidth := size / sectionSize
-
-	for i := 0; i < boxWidth; i++ {
-		for j := 0; j < boxWidth; j++ {
-			_x := indexX + i
-			_y := indexY + j
-			value := field[_y][_x]
-			if value != 0 || (y != _y || x != _x) {
-				_candidate = remove(_candidate, value)
+func Solve(grid *[][]int) bool {
+	for i := 0; i < 9; i++ {
+		for j := 0; j < 9; j++ {
+			if (*grid)[i][j] == 0 {
+				for k := 0; k < 9; k++ {
+					if Possible(grid, i, j, k+1) {
+						(*grid)[i][j] = k + 1
+						if Solve(grid) {
+							return true
+						} else {
+							(*grid)[i][j] = 0
+						}
+					}
+				}
+				return false
 			}
 		}
 	}
-	return _candidate
+	return true
 }
 
-func remove(numbers []int, search int) []int {
-	result := []int{}
-	for _, num := range numbers {
-		if num != search {
-			result = append(result, num)
-		}
-	}
-	return result
+func main() {
+	const size = 9
+	flag.Parse()
+	numStr := flag.Arg(0)
+	field := Load(numStr, size)
+
+	fmt.Println("[START]")
+	Render(&field)
+
+	Solve(&field)
+
+	fmt.Println("[END]")
+	Render(&field)
 }
