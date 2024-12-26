@@ -50,13 +50,7 @@ func validate(grid *[][]int) bool {
 
 func possible(grid *[][]int, y int, x int, n int) bool {
 	for i := 0; i < 9; i++ {
-		if i != x && (*grid)[y][i] == n {
-			return false
-		}
-	}
-
-	for j := 0; j < 9; j++ {
-		if j != y && (*grid)[j][x] == n {
+		if (i != x && (*grid)[y][i] == n) || (i != y && (*grid)[i][x] == n) {
 			return false
 		}
 	}
