@@ -37,39 +37,10 @@ func load(numStr string, size int) [][]int {
 
 func validate(grid *[][]int) bool {
 	for i := 0; i < 9; i++ {
-		row := make(map[int]bool)
 		for j := 0; j < 9; j++ {
-			if (*grid)[i][j] != '.' {
-				if row[(*grid)[i][j]] {
-					return false
-				}
-				row[(*grid)[i][j]] = true
-			}
-		}
-	}
-
-	for j := 0; j < 9; j++ {
-		col := make(map[int]bool)
-		for i := 0; i < 9; i++ {
-			if (*grid)[i][j] != '.' {
-				if col[(*grid)[i][j]] {
-					return false
-				}
-				col[(*grid)[i][j]] = true
-			}
-		}
-	}
-
-	for blockRow := 0; blockRow < 3; blockRow++ {
-		for blockCol := 0; blockCol < 3; blockCol++ {
-			block := make(map[int]bool)
-			for i := 0; i < 3; i++ {
-				for j := 0; j < 3; j++ {
-					if block[(*grid)[blockRow*3+i][blockCol*3+j]] {
-						return false
-					}
-					block[(*grid)[blockRow*3+i][blockCol*3+j]] = true
-				}
+			n := (*grid)[i][j]
+			if n == 0 || !possible(grid, i, j, n) {
+				return false
 			}
 		}
 	}
@@ -85,7 +56,7 @@ func possible(grid *[][]int, y int, x int, n int) bool {
 	}
 
 	for j := 0; j < 9; j++ {
-		if j != x && (*grid)[j][x] == n {
+		if j != y && (*grid)[j][x] == n {
 			return false
 		}
 	}
@@ -95,7 +66,7 @@ func possible(grid *[][]int, y int, x int, n int) bool {
 
 	for i := 0; i < 3; i++ {
 		for j := 0; j < 3; j++ {
-			if (*grid)[y0+i][x0+j] == n {
+			if x != x0+j && y != y0+i && (*grid)[y0+i][x0+j] == n {
 				return false
 			}
 		}
@@ -111,7 +82,7 @@ func solve(grid *[][]int) bool {
 				for k := 0; k < 9; k++ {
 					if possible(grid, i, j, k+1) {
 						(*grid)[i][j] = k + 1
-						if solve(grid) && validate(grid) {
+						if solve(grid) {
 							return true
 						} else {
 							(*grid)[i][j] = 0
@@ -134,6 +105,7 @@ func main() {
 
 	fmt.Println("[START]")
 	render(&field)
+	fmt.Println("")
 
 	solve(&field)
 	if validate(&field) {
