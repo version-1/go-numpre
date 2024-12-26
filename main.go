@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func Render(grid *[][]int) {
+func render(grid *[][]int) {
 	for i := 0; i < 9; i++ {
 		var row string
 		for _, v := range (*grid)[i] {
@@ -18,7 +18,7 @@ func Render(grid *[][]int) {
 	}
 }
 
-func Load(numStr string, size int) [][]int {
+func load(numStr string, size int) [][]int {
 	field := [][]int{}
 	for i := 0; i < size; i++ {
 		start := i * size
@@ -35,7 +35,49 @@ func Load(numStr string, size int) [][]int {
 	return field
 }
 
-func Possible(grid *[][]int, y int, x int, n int) bool {
+func validate(grid *[][]int) bool {
+	for i := 0; i < 9; i++ {
+		row := make(map[int]bool)
+		for j := 0; j < 9; j++ {
+			if (*grid)[i][j] != '.' {
+				if row[(*grid)[i][j]] {
+					return false
+				}
+				row[(*grid)[i][j]] = true
+			}
+		}
+	}
+
+	for j := 0; j < 9; j++ {
+		col := make(map[int]bool)
+		for i := 0; i < 9; i++ {
+			if (*grid)[i][j] != '.' {
+				if col[(*grid)[i][j]] {
+					return false
+				}
+				col[(*grid)[i][j]] = true
+			}
+		}
+	}
+
+	for blockRow := 0; blockRow < 3; blockRow++ {
+		for blockCol := 0; blockCol < 3; blockCol++ {
+			block := make(map[int]bool)
+			for i := 0; i < 3; i++ {
+				for j := 0; j < 3; j++ {
+					if block[(*grid)[blockRow*3+i][blockCol*3+j]] {
+						return false
+					}
+					block[(*grid)[blockRow*3+i][blockCol*3+j]] = true
+				}
+			}
+		}
+	}
+
+	return true
+}
+
+func possible(grid *[][]int, y int, x int, n int) bool {
 	for i := 0; i < 9; i++ {
 		if i != x && (*grid)[y][i] == n {
 			return false
@@ -62,14 +104,14 @@ func Possible(grid *[][]int, y int, x int, n int) bool {
 	return true
 }
 
-func Solve(grid *[][]int) bool {
+func solve(grid *[][]int) bool {
 	for i := 0; i < 9; i++ {
 		for j := 0; j < 9; j++ {
 			if (*grid)[i][j] == 0 {
 				for k := 0; k < 9; k++ {
-					if Possible(grid, i, j, k+1) {
+					if possible(grid, i, j, k+1) {
 						(*grid)[i][j] = k + 1
-						if Solve(grid) {
+						if solve(grid) && validate(grid) {
 							return true
 						} else {
 							(*grid)[i][j] = 0
@@ -80,6 +122,7 @@ func Solve(grid *[][]int) bool {
 			}
 		}
 	}
+
 	return true
 }
 
@@ -87,13 +130,17 @@ func main() {
 	const size = 9
 	flag.Parse()
 	numStr := flag.Arg(0)
-	field := Load(numStr, size)
+	field := load(numStr, size)
 
 	fmt.Println("[START]")
-	Render(&field)
+	render(&field)
 
-	Solve(&field)
+	solve(&field)
+	if validate(&field) {
+		fmt.Println("[END]")
+	} else {
+		fmt.Println("[END] Invalid!!!!!!!!!!")
+	}
 
-	fmt.Println("[END]")
-	Render(&field)
+	render(&field)
 }
